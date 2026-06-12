@@ -1,0 +1,1989 @@
+\documentclass[8pt, aspectratio=169]{beamer}
+
+% Theme and Color Settings
+\usetheme{Madrid}
+\usecolortheme{whale}
+
+% Packages
+\usepackage{amsmath, amssymb, amsfonts}
+\usepackage{array}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{ragged2e}
+\usepackage{booktabs}
+\usetikzlibrary{shapes.geometric, arrows, positioning}
+
+% TikZ Styles for Pipeline
+\tikzstyle{process} = [rectangle, minimum width=2.5cm, minimum height=1cm, text centered, draw=black, fill=blue!10, text width=2.5cm]
+\tikzstyle{arrow} = [thick,->,>=stealth]
+
+% Title Page Information
+\title[Multivariate Bankruptcy Analysis]{Multivariate Analysis of Bankruptcy Data}
+\author[Aniv, Koushan, Shashwat]{
+    Aniv Mazumder (MD2505) \and \\
+    Koushan Saha (MD2513) \and \\
+    Shashwat Asthana (MD2524)
+}
+\institute[ISI Delhi]{
+    Under the guidance of Dr. Swagata Nandi \\
+    Course: Multivariate Analysis \\
+    Indian Statistical Institute, Delhi
+}
+\date{April 22, 2026}
+
+\begin{document}
+
+% Slide 1: Title Slide
+\begin{frame}
+    \titlepage
+\end{frame}
+
+\begin{frame}{Dataset Overview: Corporate Bankruptcy}
+    \begin{itemize}
+        \item \textbf{The Dataset \& Significance}: This is an multivariate analysis of the classic Bankruptcy Dataset from Johnson and Wichern, originally based on Edward Altman's foundational work. It serves as a rigorous benchmark in multivariate statistics to evaluate classification methods for predicting financial distress.
+        \item \textbf{Response Variable ($Y$)}: A binary indicator of financial health, where $Y=1$ denotes financially sound firms and $Y=0$ denotes firms observed within two years prior to bankruptcy.
+        \item \textbf{Variabless ($X$)}: Four continuous financial ratios that act as established proxies for a firm's structural stability:
+        \begin{itemize}
+            \item $X_1$: Cash Flow to Total Debt (Solvency)
+            \item $X_2$: Net Income to Total Assets (Profitability/Return on Assets) 
+            \item $X_3$: Current Assets to Total Liabilities (Aggregate Liquidity)
+            \item $X_4$: Current Assets to Net Sales (Activity/Turnover)
+        \end{itemize}
+        \item \textbf{Practical Real-World Relationship}: In a practical economic scenario, financial distress develops systematically over time rather than instantaneously. These variables interact multidimensionally: a firm's capacity to service debt ($X_1$) and independently generate earnings ($X_2$), combined with its short-term financial resilience ($X_3$) and working capital management ($X_4$), collectively determine its underlying probability of default.
+    \end{itemize}
+\end{frame}
+
+% --- COMBINED SLIDE: OBJECTIVE & FEATURE SPACE ---
+\begin{frame}{Project Overview: Objective \& Feature Space}
+    % Top Block: The Goal
+    \begin{block}{Goal}
+        \small To mathematically differentiate between financially sound firms ($Y=1$) and those facing bankruptcy ($Y=0$) using multivariate structural modeling and geometric discovery.
+    \end{block}
+
+    \vspace{0.2cm}
+
+    \begin{columns}[T]
+        % Left Column: Feature Definitions
+        \column{0.52\textwidth}
+        \begin{exampleblock}{Feature Space: $\mathbf{X} \in \mathbb{R}^4$}
+            \scriptsize
+            \begin{itemize}
+                \item \textbf{$X_1$ (Solvency):} $\left(\frac{\text{Cash Flow}}{\text{Total Debt}}\right)$
+                \vspace{0.1cm}
+                \item \textbf{$X_2$ (Profitability):} $\left(\frac{\text{Net Income}}{\text{Total Assets}}\right)$
+                \vspace{0.1cm}
+                \item \textbf{$X_3$ (Liquidity):} $\left(\frac{\text{Current Assets}}{\text{Total Liabilities}}\right)$
+                \vspace{0.1cm}
+                \item \textbf{$X_4$ (Turnover):} $\left(\frac{\text{Current Assets}}{\text{Net Sales}}\right)$
+            \end{itemize}
+        \end{exampleblock}
+
+        % Right Column: Response & Directives
+        \column{0.44\textwidth}
+        \begin{alertblock}{Response Variable ($Y$)}
+            \centering
+            $Y = 1$: Financially Sound \\
+            $Y = 0$: Bankruptcy
+        \end{alertblock}
+
+       
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Dataset Snapshot \& Integrity}
+    \textbf{10 Observations:}
+    \vspace{0.2cm}
+    
+    \begin{table}
+        \centering
+        \resizebox{0.3\textwidth}{!}{%
+        \begin{tabular}{ccccc}
+            \toprule
+            \textbf{$X_1$} & \textbf{$X_2$} & \textbf{$X_3$} & \textbf{$X_4$} & \textbf{$y$ (Class)} \\
+            \midrule
+            -0.08 & -0.08 & 1.51 & 0.42 & 0 \\
+            0.05  & 0.03  & 1.68 & 0.95 & 0 \\
+            0.01  & 0.00  & 1.26 & 0.60 & 0 \\
+            0.12  & 0.11  & 1.14 & 0.17 & 0 \\
+            -0.28 & -0.27 & 1.27 & 0.51 & 0 \\
+            \midrule
+            0.51  & 0.10  & 2.49 & 0.54 & 1 \\
+            0.08  & 0.02  & 2.01 & 0.53 & 1 \\
+            0.38  & 0.11  & 3.27 & 0.35 & 1 \\
+            0.19  & 0.05  & 2.25 & 0.33 & 1 \\
+            0.32  & 0.07  & 4.24 & 0.63 & 1 \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+
+    \vspace{0.4cm}
+    \begin{block}{Data Description}
+        \centering
+        Label 0 (Bankrupted) $\longrightarrow$ 21 and Label 1(Financially Sound) $\longrightarrow$ 25. 
+        \textbf{Missing Values:} None \\
+        The dataset contains no null values, so no need for data imputation. All of the variables have very few ties.
+    \end{block}
+\end{frame}
+
+\begin{frame}{Methodology \& Analytical Workflow}
+    \begin{itemize}
+        \item \textbf{Exploratory Data Analysis (EDA):}
+        \begin{itemize}
+            \item Verified data integrity (found zero missing values).
+            \item Assessed marginal and multivariate normality using skewness, histograms and other formal tests.
+      
+        \end{itemize}
+        
+        \item \textbf{Data Transformation and Assessment:}
+        \begin{itemize}
+            \item Applied multiple transformations to address non-normality of different columns.
+            \item Performed multivariate outlier detection using chi-square QQ plot.
+        \end{itemize}
+        
+        \item \textbf{ Classification:}
+        \begin{itemize}
+            \item Implemented and compared \textbf{LDA, QDA, and Logistic Regression}.
+            \item Used Naive Bayes as a classification procedure.
+        \end{itemize}
+        
+        \item \textbf{Variance structure Analysis:}
+        \begin{itemize}
+            \item Conducted \textbf{PCA} to isolate core predictive signals and reduce redundancy.
+            \item Tested the validity of applying factor analysis on this dataset.
+        \end{itemize}
+        
+        \item \textbf{Unsupervised Learning:}
+        \begin{itemize}
+            \item Developed a \textbf{Hybrid LDA + k-means} strategy, achieving the highest unsupervised accuracy.
+        \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Column-wise histograms}
+    \begin{center}
+        \includegraphics[height=0.7\textheight]{EDA Histogram} % Conceptual image placeholder - no file access
+    \end{center}
+    \begin{itemize}
+        \item \textbf{Skewness/Non-Normality}: The histograms reveal varying degrees of skewness and non-normality across key variables, violating column-wise normality.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Groupwise Histograms of $X_1$ and $X_2$}
+    \begin{center}
+        \includegraphics[height=0.55\textheight]{EDA Histogram of Column 1 and 2 groupwise}
+    \end{center}
+    
+    \begin{itemize}
+        \item \textbf{Shift in Central Tendency:} Bankrupt firms ($Y = 0$) exhibit distinct shift towards negative side across both metrics. While the financially sound cohort ($Y = 1$) centers on positive returns and $X_1$, the bankrupt group shows significant mass in the negative domain.
+        
+        \item \textbf{Variance Heterogeneity:} Contrary to initial assumptions, the bankrupt cohort demonstrates \textbf{greater dispersion} (wider variance), especially $X_2$. The financially sound group exhibits a much tighter distribution.
+      
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Groupwise Histograms of $X_3$ and $X_4$}
+    \begin{center}
+        \includegraphics[height=0.55\textheight]{EDA Histogram of Column 3 and 4 groupwise}
+    \end{center}
+    
+    \begin{itemize}
+        
+        \item $X_4$ exhibits opposite skewness for the two groups.
+        \item The dispersion for $X_3$ is much larger for group 0 than for group 1. On the other hand the spread of $X_4$ is almost the same for both the groups.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Groupwise Boxplots of $X_1$ and $X_2$}
+    \begin{center}
+        \includegraphics[width=0.45\textwidth]{EDA Boxplot X1} \hfill
+        \includegraphics[width=0.45\textwidth]{EDA Boxplot X2}
+    \end{center}
+    
+    \begin{itemize}
+        \item \textbf{Median Shifts}: Financially sound firms ($Y=1$) exhibit visibly higher medians across both metrics.
+        \item The points beyond the standard whiskers confirm the presence of outliers.
+    \end{itemize}
+\end{frame}
+\begin{frame}{Groupwise Boxplots of $X_3$ and $X_4$}
+    \begin{center}
+        \includegraphics[width=0.45\textwidth]{EDA Boxplot X3} \hfill
+        \includegraphics[width=0.45\textwidth]{EDA Boxplot X4}
+    \end{center}
+    
+    \begin{itemize}
+        \item $X_3$ has a few points outside the whiskers and the medians and IQR differ significantly for the two groups.
+        \item $X_4$ is relatively indistinguishable between groups regarding the IQR and median.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Correlation Analysis}
+    \begin{center}
+        \includegraphics[height=0.6\textheight]{corr1}
+    \end{center}
+    
+    \begin{itemize}
+        \item $X_1$ and $X_2$ exhibit a strong positive correlation ($r = 0.86$), indicating potential multicollinearity in regression-based models.
+        
+        \item $X_3$ is moderately positively correlated with both $X_1$ ($r = 0.57$) and $X_2$ ($r = 0.47$).
+        
+        \item $X_4$ is only weakly related to the other predictors, with correlations of $r = -0.05$ with $X_1$, $r = 0.05$ with $X_2$, and $r = 0.15$ with $X_3$, indicating near-independence in the linear feature space.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Pairwise Scatterplot Matrix}
+    \begin{center}
+        \includegraphics[height=0.6\textheight]{EDA Scatterplot}
+    \end{center}
+    
+    \begin{itemize}
+        \item \textbf{Visualizing Collinearity}: The tight, linear clustering between $X_1$ and $X_2$ clearly reflects their strong positive correlation. In contrast, relationships involving $X_3$ show moderate positive association, while pairs with $X_4$ appear weakly structured, indicating limited linear dependence.
+    
+        \item \textbf{Complete Group Overlap:} Scatterplots involving $X_4$ exhibit severe mixing of the two categories, demonstrating that $X_4$ provides no discriminative power to separate the underlying classes.
+
+    \end{itemize}
+
+\end{frame}
+
+\begin{frame}{Class-Conditional Scatterplot Matrix}
+    \begin{center}
+        \includegraphics[height=0.6\textheight]{EDA Scatterplot with y}
+    \end{center}
+   
+
+    \begin{itemize}
+    \item $X_3$ provides the strongest univariate separation, followed by $X_2$, while $X_1$ exhibits only moderate discriminative power with substantial class overlap.
+    
+    \item $X_4$ shows little to no separation across classes, indicating minimal univariate predictive value.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Marginal Normality of $X_1$ and $X_2$}
+    \begin{center}
+        \includegraphics[width=0.45\textwidth]{EDA QQ Plot X1} \hfill
+        \includegraphics[width=0.45\textwidth]{EDA QQ Plot X2}
+    \end{center}
+    
+    \begin{itemize}
+        \item \textbf{Departures from normality}: Both  exhibit variables deviations from the theoretical Gaussian reference line at the extreme quantiles, confirming deviation from normality.
+        \item \textbf{Parametric Implications}: This explicit lack of marginal normality formally violates the assumptions of standard Linear Discriminant Analysis (LDA) in the raw feature space.
+    \end{itemize}
+\end{frame}
+\begin{frame}{Marginal Normality of $X_3$ and $X_4$}
+    \begin{center}
+        \includegraphics[width=0.45\textwidth]{EDA QQ Plot X3} \hfill
+        \includegraphics[width=0.45\textwidth]{EDA QQ Plot X4}
+    \end{center}
+    
+    \begin{itemize}
+        \item \textbf{Right-Tail Deviation in $X_3$}: The upper tail of the $X_3$ Q-Q plot departs noticeably from the reference line.
+    
+        \item \textbf{Approximate Normality in $X_4$}: The $X_4$ Q-Q plot aligns closely with the theoretical quantiles, with only minor tail deviations.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Univariate Normality Tests}
+    \begin{table}
+        \centering
+        \renewcommand{\arraystretch}{1.6}
+        \resizebox{\textwidth}{!}{
+        \begin{tabular}{| l | p{0.28\textwidth} | p{0.25\textwidth} | p{0.28\textwidth} |}
+            \hline
+            \textbf{Statistical Test} & \textbf{Test Statistic} & \textbf{Ideal Use Case} & \textbf{Relevance to Our Analysis} \\
+            \hline
+            \textbf{Shapiro-Wilk} & $W = \frac{\left(\sum a_i x_{(i)}\right)^2}{\sum (x_i - \bar{x})^2}$ & Generally the most powerful omnibus test for detecting non-normality in medium-sized samples. & Serves as our primary, rigorous proof that the marginal distributions of $X_2$ through $X_3$ strictly violate Gaussian assumptions. \\
+            \hline
+            \textbf{Anderson-Darling} & $A^2 = -n - \frac{1}{n} \sum (2i-1) \ln [F(x_i)(1-F(x_{n+1-i}))]$ & Places heavier weight on the extremes (tails) of the distribution. & Specifically targets and mathematically confirms the presence of the severe heavy tails and outliers observed in our EDA. \\
+            \hline
+            \textbf{Kolmogorov-Smirnov} & $D = \sup_x |F_n(x) - F(x)|$ \newline (Maximum absolute distance between empirical and theoretical CDFs) & A general, non-parametric approach evaluating the overarching shape of the distribution. & Provides a robust, secondary validation that the overall CDF structures of $X_2$ and $X_3$ do not align with a normal curve. \\
+            \hline
+        \end{tabular}
+        }
+    \end{table}
+\end{frame}
+
+\begin{frame}{Summary of Univariate Normality Diagnostics}
+    \begin{table}
+        \centering
+        % Resizes the table to fit the slide width
+        \resizebox{\textwidth}{!}{%
+        \begin{tabular}{l c c c p{6.5cm}}
+            \toprule
+            \textbf{Variable} & \textbf{S-W ($p$)} & \textbf{A-D ($p$)} & \textbf{K-S ($p$)} & \textbf{Statistical Interpretation} \\
+            \midrule
+            \textbf{$X_1$} & 0.5431 & 0.4971 & 0.8956 & \textbf{Fails to reject $H_0$:} No statistically significant departure from univariate normality across any metric. \\
+            \addlinespace
+            \textbf{$X_2$} & $5.30 \times 10^{-6}$ & $2.55 \times 10^{-7}$ & 0.0379 & \textbf{Rejects $H_0$ ($p < 0.05$):} Deviation from normality. \\
+            \addlinespace
+            \textbf{$X_3$} & 0.0019 & 0.0023 & 0.3239 & \textbf{Mixed Results:} S-W and A-D reject $H_0$. Departs significantly from normality. \\
+            \addlinespace
+            \textbf{$X_4$} & 0.3457 & 0.7466 & 0.9988 & \textbf{Fails to reject $H_0$:} Insufficient evidence to conclude deviation.  \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+\end{frame}
+
+
+
+\begin{frame}{Evaluation of Multivariate Normality (MVN)}
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{%
+        \begin{tabular}{>{\raggedright\arraybackslash}p{3.5cm} c >{\raggedright\arraybackslash}p{7cm}}
+            \toprule
+            \textbf{Diagnostic Test} & \textbf{$p$-value} & \textbf{Statistical Interpretation} \\
+            \midrule
+            \textbf{Mardia's Skewness} & $< 0.001$ & \textbf{Rejects $H_0$:} Definitively confirms the presence of severe asymmetric tail behavior within the joint distribution. \\
+            \addlinespace
+            \textbf{Mardia's Kurtosis} & $0.001$ & \textbf{Rejects $H_0$:} Confirms structural departures from Multivariate Normality. \\
+            \addlinespace
+            \textbf{Henze-Zirkler} & $< 0.001$ & \textbf{Rejects $H_0$:} Omnibus procedure confirms failure to achieve multivariate normality. \\
+            \addlinespace
+            \textbf{Royston's} & $< 0.001$ & \textbf{Rejects $H_0$:} Provides methodologically distinct corroboration of the non-normal data structure. \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+    
+\end{frame}
+
+% --- Slide 1: Mathematical Formulation and Validity ---
+\begin{frame}{Box's M-Test: Mathematical Formulation and Validity}
+    \textbf{Objective:} Assesses multivariate homoscedasticity ($H_0: \mathbf{\Sigma}_1 = \mathbf{\Sigma}_2 = \mathbf{\Sigma}_{pooled}$).
+
+    \vspace{0.2cm}
+    \textbf{Mathematical Framework:}
+    The test compares the natural logarithm of the determinant of the pooled sample covariance matrix against the weighted sum of the individual group log determinants:
+    \begin{equation}
+        M = (N - g) \ln |\mathbf{S}_{pooled}| - \sum_{i=1}^{g} (n_i - 1) \ln |\mathbf{S}_i|
+    \end{equation}
+    $M$ is scaled by a correction factor to yield an asymptotically $\chi^2$-distributed statistic.
+
+    \vspace{0.2cm}
+    \textbf{Methodological Validity \& Limitations:}
+    \begin{itemize}
+        \item \textbf{Validity:} Requires strict multivariate normality and a sufficiently large sample size for the asymptotic $\chi^2$ approximation to stabilize.
+        \item \textbf{Unreliability in Current Context:} Our feature space exhibits severe non-Gaussian tail behavior. Box's M-test is sensitive to such deviations. 	 Furthermore, the limited sample size ($N=46$) degrades the calibration of the test statistic.
+    \end{itemize}
+\end{frame}
+
+% --- Slide 2: Visual Diagnostics ---
+\begin{frame}{Visual Diagnostics of Covariance Homogeneity}
+    \begin{center}
+        % Including the image without a formal caption or title as requested
+        \includegraphics[width=0.55\textwidth]{EDA Box's M-test plot}
+    \end{center}
+    
+    \vspace{0.2cm}
+    \begin{itemize}
+        \item There is clear spatial separation between the groups; the generalized variance (log determinant of the sample variance matrix) for Group 2 is larger than that of Group 1.
+        \item Neither of the individual group confidence intervals comfortably aligns with the pooled centroid, visually suggesting heteroscedasticity.
+    \end{itemize}
+\end{frame}
+
+% --- Slide 3: Empirical Test Results and Synthesis ---
+\begin{frame}{Evaluation of Box-M test results}
+    
+    \textbf{Box-M Test Output:}
+    \begin{table}
+        \centering
+        \begin{tabular}{ccc}
+            \toprule
+            \textbf{$\chi^2$ (approx.)} & \textbf{Degrees of Freedom} & \textbf{$p$-value} \\
+            \midrule
+            $64.046$ & $10$ & $6.167 \times 10^{-10}$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.4cm}
+    \begin{itemize}
+        \item \textbf{Corroboration of Visuals:} The highly significant $p$-value ($p < 0.001$) formally rejects the null hypothesis of equal covariance matrices, strictly corroborating the visual divergence observed in the log determinant plot.
+        \item \textbf{Structural Implications:} Because the assumption of equal covariance matrices is not satisfied (though mathematically compromised by non-normality), this structural reality necessitates the deployment of Quadratic Discriminant Analysis (QDA) or the application of transformations prior to modeling.
+        \item \textbf{Sensitivity Caveat:} Box's M test is acutely sensitive to deviations from multivariate normality. Given the small sample ($n=46$) and established skewness, this extreme rejection likely conflates true heteroscedasticity with distributional non-normality.
+
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{MANOVA: Mathematical Definitions of Test Statistics}
+    \textbf{Objective:} Test the null hypothesis of equal population centroid vectors ($H_0: \boldsymbol{\mu}_0 = \boldsymbol{\mu}_1$). Let $\mathbf{H}$ be the Hypothesis matrix, $\mathbf{E}$ be the Error matrix, and $\lambda_i$ denote the non-zero eigenvalues of $\mathbf{E}^{-1}\mathbf{H}$.
+
+    \vspace{0.3cm}
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{%
+        \begin{tabular}{>{\raggedright\arraybackslash}p{3.5cm} c >{\raggedright\arraybackslash}p{6.5cm}}
+            \toprule
+            \textbf{Test Statistic} & \textbf{Mathematical Formulation} & \textbf{Interpretation \& Methodological Use Case} \\
+            \midrule
+            \textbf{Wilks' Lambda ($\Lambda$)} & 
+            $\Lambda = \frac{|\mathbf{E}|}{|\mathbf{H}+\mathbf{E}|} = \prod_{i=1}^s \frac{1}{1+\lambda_i}$ & 
+            Represents the ratio of error variance to total variance. Lower values mathematically indicate greater macroscopic group separation. \\
+            \addlinespace
+            \textbf{Pillai's Trace ($V$)} & 
+            $V = \text{trace}[\mathbf{H}(\mathbf{H} + \mathbf{E})^{-1}] = \sum_{i=1}^s \frac{\lambda_i}{1+\lambda_i}$ & 
+            Represents the proportion of explained variance. Generally deployed as the most robust statistic against structural departures from multivariate normality. \\
+            \addlinespace
+            \textbf{Hotelling-Lawley Trace ($T$)} & 
+            $T = \text{trace}[\mathbf{E}^{-1}\mathbf{H}] = \sum_{i=1}^s \lambda_i$ & 
+            Represents the cumulative sum of the ratio of between-group to within-group variance across all independent dimensions. \\
+            \addlinespace
+            \textbf{Roy's Greatest Root ($\Theta$)} & 
+            $\Theta = \lambda_{\max}$ & 
+            Based strictly on the maximum eigenvalue. Measures the variance explained by the single linear combination of predictors that provides maximum class separability. \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+\end{frame}
+
+\begin{frame}{MANOVA Results and Implications}
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{%
+        \begin{tabular}{l c c c >{\raggedright\arraybackslash}p{7.5cm}}
+            \toprule
+            \textbf{Multivariate Test} & \textbf{Statistic} & \textbf{Approx $F_{(4, 41)}(F_{(p, (n-2)-p+1)})$} & \textbf{$p$-value} & \textbf{Interpretation \& Analytical Implication} \\
+            \midrule
+            \textbf{Wilks' $\Lambda$} & $0.5152$ & $9.6438$ & $1.365 \times 10^{-5}$ & \textbf{Constraint ($k=2$):} With only two target groups, the hypothesis matrix $\mathbf{H}$ has a rank of 1, yielding only a single non-zero eigenvalue ($\lambda_1 = 0.94085$). \\
+            \addlinespace
+            \textbf{Pillai's $V$} & $0.4848$ & $9.6438$ & $1.365 \times 10^{-5}$ & \textbf{Equivalent Transformations:} Due to the rank constraint, all metrics act as exact mathematical transformations of one another, resulting in an identical $F$-statistic. \\
+            \addlinespace
+            \textbf{Hotelling-Lawley $T$} & $0.9408$ & $9.6438$ & $1.365 \times 10^{-5}$ & \textbf{Rejection of $H_0$:} The overwhelmingly significant $p$-value falls far below standard thresholds, definitively rejecting the null hypothesis of equal population centroids. \\
+            \addlinespace
+            \textbf{Roy's $\Theta$} & $0.9408$ & $9.6438$ & $1.365 \times 10^{-5}$ & \textbf{Mandate for Discriminant Analysis:} Confirms the multivariate profiles are substantially separated in $\mathbb{R}^4$, rigorously justifying the execution of DA to derive the optimal separating hyperplane. \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+
+    % NOTE THAT WE NEED TO EXPLAIN WHY ALL THESE P values are the same
+\end{frame}
+
+% --- Slide 1: Mathematical Framework of Hotelling's T^2 ---
+\begin{frame}{Hotelling’s $T^2$ Test: Mathematical Framework}
+    \textbf{Objective:} A multivariate generalization of the Student's $t$-test used to evaluate the null hypothesis of equal mean vectors: $H_0: \boldsymbol{\mu}_0 = \boldsymbol{\mu}_1$.
+    
+    \vspace{0.2cm}
+    \textbf{Test Statistic Formulation:}
+    The $T^2$ statistic quantifies the scaled squared Mahalanobis distance between group centroids using the pooled covariance matrix $\mathbf{S}_{pooled}$:
+    \begin{equation}
+        T^2 = \frac{n_0 n_1}{n_0 + n_1}(\mathbf{\bar{x}}_0 - \mathbf{\bar{x}}_1)^T \mathbf{S}_{pooled}^{-1}(\mathbf{\bar{x}}_0 - \mathbf{\bar{x}}_1)
+    \end{equation}
+    
+    \vspace{0.2cm}
+    \textbf{F-Distribution Transformation:}
+    Under the null hypothesis, $T^2$ is transformed into an exact $F$-statistic to determine significance:
+    \begin{equation}
+        F = \frac{n_0 + n_1 - p - 1}{(n_0 + n_1 - 2)p} T^2 \sim F_{p, n_0 + n_1 - p - 1}
+    \end{equation}
+    
+    \small{\textbf{Note:} While assuming multivariate normality and homoscedasticity, the test remains a robust geometric measure of centroid separation in high-dimensional space ($\mathbb{R}^p$).}
+\end{frame}
+
+% --- Slide 2: Empirical Results and Analytical Synthesis ---
+\begin{frame}{Hotelling’s $T^2$: Results and implications}
+    \textbf{Empirical Output:}
+    \begin{table}
+        \centering
+        \begin{tabular}{l c c c}
+            \toprule
+            \textbf{Test Statistic ($T^2$)} & \textbf{Num. $df$} & \textbf{Den. $df$} & \textbf{$p$-value} \\
+            \midrule
+            $41.398$ & $4$ & $41$ & $1.365 \times 10^{-5}$ \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.3cm}
+
+    \begin{itemize}
+        \item \textbf{Magnitude of Separation:} The large $T^2$ value indicates that the Mahalanobis distance between the bankrupt and financially sound firms is substantial in $\mathbb{R}^4$.
+        \item \textbf{Statistical Significance:} With $p < 0.001$, we reject $H_0$. The population mean vectors are structurally distinct and statistically separable.
+        \item \textbf{Equivalence to MANOVA:} Since $k=2$, the $p$-value is identical to the prior MANOVA diagnostics. Applying the $F$-transformation to $T^2 = 41.398$ yields $F \approx 9.6438$, confirming internal consistency and a rigorous mandate for subsequent Discriminant Analysis.
+    \end{itemize}
+\end{frame}
+
+% --- Slide 1: Methodology: Monte Carlo Cross-Validation ---
+\begin{frame}{Methodology: Monte Carlo Cross-Validation}
+    \textbf{Objective:} To stabilize predictive performance estimates for $N=46$ observations via repeated random sub-sampling.
+    
+    \begin{itemize}
+        \item \textbf{Initialization:} Executed for $B = 2000$ independent iterations to ensure stable, asymptotic estimation of generalization error.
+        \item \textbf{Random Partitioning:} For each iteration $b$, the dataset is split into $n_{train} = 36$ and a hold-out test set of $n_{test} = 10$.
+        \item \textbf{Model Estimation:} LDA, Logistic Regression, and QDA are fitted strictly on the training partition, maintaining complete blindness to test data.
+        \item \textbf{Out-of-Sample Evaluation:} Performance metrics (Accuracy, Precision, Recall, $F_1$) are independently recorded for each iteration.
+        \item \textbf{Metric Aggregation:} Final reported values are the arithmetic expectations (averages) across all 2000 iterations, yielding a robust estimate of true predictive capability.
+    \end{itemize}
+\end{frame}
+
+% --- Slide 2: Mathematical Definitions and Utility of Metrics ---
+\begin{frame}{Evaluation Metrics: Formulation and Analytical Utility}
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{%
+        \begin{tabular}{l c p{7cm}}
+            \toprule
+            \textbf{Metric} & \textbf{Mathematical Definition} & \textbf{Methodological Rationale} \\
+            \midrule
+            \textbf{Accuracy} & $\frac{TP + TN}{TP + TN + FP + FN}$ & Measures the global proportion of correct classifications; serves as a baseline performance heuristic. \\
+            \addlinespace
+            \textbf{Precision} & $\frac{TP}{TP + FP}$ & Penalizes \textbf{Type I errors}; critical for evaluating the reliability of "Financially Sound" predictions. \\
+            \addlinespace
+            \textbf{Recall} & $\frac{TP}{TP + FN}$ & Penalizes \textbf{Type II errors}; measures the model's sensitivity in identifying actually sound firms. \\
+            \addlinespace
+            \textbf{$F_1$ Score} & $2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}}$ & The harmonic mean of Precision and Recall; provides a balanced single-value metric for simultaneous error minimization. \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+    
+  \begin{itemize}
+        \item \textbf{Precision (Penalizes Type I Errors):} Critical for evaluating the reliability of ''Financially Sound'' predictions. It ensures that firms predicted to be healthy are not actually on the verge of bankruptcy, which prevents highly costly investment or lending mistakes.
+        
+        \item \textbf{Recall (Penalizes Type II Errors):} Measures the model's sensitivity in identifying actually sound firms. It ensures that genuinely healthy firms are correctly recognized and not wrongly penalized or classified as distressed, avoiding missed financial opportunities.
+    \end{itemize}
+\end{frame}
+
+% --- Slide 3: Comparative Performance Synthesis ---
+\begin{frame}{Comparative Performance and Structural Interpretation}
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{%
+        \begin{tabular}{l c c c c}
+            \toprule
+            \textbf{Model} & \textbf{Accuracy} & \textbf{Precision} & \textbf{Recall} & \textbf{$F_1$ Score} \\
+            \midrule
+            \textbf{LDA} & 0.831 & 0.836 & 0.879 & 0.841 \\
+            \textbf{Logistic} & 0.861 & 0.872 & 0.888 & 0.866 \\
+            \textbf{QDA} & \textbf{0.874} & 0.857 & \textbf{0.935} & \textbf{0.883} \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+
+    \vspace{0.2cm}
+    \begin{itemize}
+        \item \textbf{LDA Underperformance:} Weakest across metrics due to the unequality of the covariance matrices of the 2 groups, confirmed by Box's M-test.
+        \item \textbf{Logistic Robustness:} Outperforms LDA by modeling log-odds directly; its flexibility avoids strict MVN and covariance assumptions.
+        \item \textbf{QDA Superiority:} Definitive winner; its non-linear decision boundary naturally accommodates differing variance volumes ($\boldsymbol{\Sigma}_0 \neq \boldsymbol{\Sigma}_1$), achieving the highest sensitivity (Recall: 0.935) in identifying financially sound firms.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Geometric Analysis of Decision Boundaries (Raw Feature Space)}
+    \begin{center}
+        \includegraphics[width=0.65\textwidth]{Fitting the dataset (initial)}
+    \end{center}
+
+    \vspace{0.1cm}
+\begin{itemize}
+    \item \textbf{QDA Overfitting:} On the full dataset, QDA hyper-localizes into a restricted ellipse around Group 0's centroid, failing to capture the class's wider spatial distribution.
+    \item \textbf{Linear stability:} Despite violating the equal covariance assumption ($\Sigma_0 \neq \Sigma_1$), LDA and Logistic Regression provide stable, generalized linear boundaries that definitively outperform QDA.
+    \item \textbf{Misclassification Counts:} 
+    \begin{itemize}
+        \item \textbf{LDA \& Logistic Regression:} 5 and 4 error resp.
+        \item \textbf{QDA:} 12 total errors (11 points from Group 0 and 1 point from Group 1).
+    \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Mathematical Framework of Feature Transformations}
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{%
+        \begin{tabular}{l c p{6.5cm}}
+            \toprule
+            \textbf{Transformation} & \textbf{Mathematical Formulation} & \textbf{Application \& Use Case} \\
+            \midrule
+            \textbf{Logarithmic} & $X^* = \log(X+c)$ & Aggressively compresses the upper tail of positively skewed distributions. Requires translation constant $c$ to ensure strict positivity. \\
+            \addlinespace
+            \textbf{Square Root} & $X^* = \sqrt{X+c}$ & Milder variance-stabilizing transformation. Effective for moderate skewness or when variance is proportional to the mean (Poisson-like). \\
+            \addlinespace
+            \textbf{Box-Cox} & 
+            $X^{(\lambda)} = \begin{cases} \frac{(X+c)^\lambda - 1}{\lambda} & \text{if } \lambda \neq 0 \\ \log(X+c) & \text{if } \lambda = 0 \end{cases}$ & 
+            Generalized parametric power family. Optimal $\lambda$ is estimated via MLE to maximize the profile log-likelihood for normality approximation. \\
+            \addlinespace
+            \textbf{Yeo-Johnson} & 
+            $X^{(\lambda)} = \begin{cases} \frac{(X+1)^\lambda - 1}{\lambda} & X \geq 0, \lambda \neq 0 \\ \log(X+1) & X \geq 0, \lambda = 0 \\ \frac{-[(-X+1)^{2-\lambda} - 1]}{2-\lambda} & X < 0, \lambda \neq 2 \\ -\log(-X+1) & X < 0, \lambda = 2 \end{cases}$ & 
+            Extension of the Box-Cox family designed to natively accommodate both positive and negative values without requiring arbitrary translation constants. \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+    \vspace{0.2cm}
+    \small{\textbf{Objective:} Map original feature space into a transformed space that approximates a Gaussian distribution.}
+\end{frame}
+
+% --- Slide 1: Box-Cox and Logarithmic Transformations ---
+\begin{frame}{Visual Assessment: Box-Cox and Log Transformations}
+    \centering
+    \begin{minipage}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{Initial QQ Plot BoxCox X2}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{Initial QQ Plot BoxCox X3}
+    \end{minipage}
+
+    \vspace{-0.2cm} % Adjust vertical spacing between rows
+
+    \begin{minipage}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{Initial QQ Plot Log X2}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{Initial QQ Plot Log X3}
+    \end{minipage}
+\end{frame}
+
+% --- Slide 2: Square Root and Yeo-Johnson Transformations ---
+\begin{frame}{Visual Assessment: Sqrt and Yeo-Johnson Transformations}
+    \centering
+    \begin{minipage}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{Initial QQ Plot Sqrt X2}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{Initial QQ Plot Sqrt X3}
+    \end{minipage}
+
+    \vspace{-0.2cm} % Adjust vertical spacing between rows
+
+    \begin{minipage}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{Initial QQ Plot YJ X2}
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.4\textwidth}
+        \centering
+        \includegraphics[width=\linewidth]{Initial QQ Plot YJ X3}
+    \end{minipage}
+\end{frame}
+
+\begin{frame}{Inferential Results for Transformed Features}
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{%
+        \begin{tabular}{l c c c l}
+            \toprule
+            \textbf{Transformation} & \textbf{S-W ($p$)} & \textbf{A-D ($p$)} & \textbf{K-S ($p$)} & \textbf{Decision ($\alpha=0.05$)} \\
+            \midrule
+            \multicolumn{5}{l}{\textit{$X_2$ (Profitability)}} \\
+            Logarithmic & $8.18 \times 10^{-7}$ & $8.67 \times 10^{-9}$ & $0.01815$ & \textbf{Reject $H_0$:} Fails to normalize. \\
+            Square Root & $2.08 \times 10^{-6}$ & $4.92 \times 10^{-8}$ & $0.02633$ & \textbf{Reject $H_0$:} Inadequate stabilization. \\
+            Box-Cox & \textbf{0.1751} & \textbf{0.1875} & \textbf{0.7527} & \textbf{Accept $H_0$:} Successfully normalized. \\
+            Yeo-Johnson & $0.0271$ & $0.0227$ & $0.4316$ & \textbf{Reject $H_0$:} Persistent tail artifacts. \\
+            \midrule
+            \multicolumn{5}{l}{\textit{$X_3$ (Liquidity)}} \\
+            Logarithmic & $0.0330$ & $0.0802$ & $0.8533$ & \textbf{Mixed:} S-W rejects $H_0$. \\
+            Square Root & $0.2539$ & $0.1519$ & $0.7002$ & \textbf{Accept $H_0$:} Successful recovery. \\
+            Box-Cox & \textbf{0.3449} & \textbf{0.2224} & \textbf{0.7762} & \textbf{Accept $H_0$:} Optimal normalization. \\
+            Yeo-Johnson & \textbf{0.4791} & \textbf{0.3522} & \textbf{0.8597} & \textbf{Accept $H_0$:} Effectively rectifies skew. \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+    
+   \begin{itemize}
+        \item \textbf{Logarithmic \& Square Root:} Failed to improve the plots towards normality.
+        \item \textbf{Yeo-Johnson:} Demonstrates marginal improvement, yet not significant enough for both columns.
+        \item \textbf{Box-Cox:} Box Cox transformation yields visually better correction of the QQ plot.
+        \item We are finalizing Box-Cox transformation for both the columns $X_2$ and $X_3$ to achieve column-wise normality.
+    \end{itemize}
+
+\end{frame}
+
+
+\begin{frame}{Multivariate Outlier Detection: Mahalanobis Distance}
+    \begin{center}
+        \includegraphics[width=0.75\textwidth]{Transformed QQ Plot}
+    \end{center}
+
+    \vspace{-0.1cm}
+    \begin{itemize}
+        \item \textbf{Distributional Adherence:} The majority of observations track the solid green reference line ($y=x$), confirming that the bulk geometric mass adheres to a multivariate Gaussian structure.
+        \item \textbf{Threshold Violations:} Points 20 and 2 marginally breach the critical $\chi^2$ threshold (red dashed line), while \textbf{Observation 46} presents as an extreme structural anomaly ($D^2 > 20$).
+        
+        \item \textbf{Outlier removal:} Observation 46 has been removed from the dataset to prevent disproportionate leverage.
+        
+    \end{itemize} 
+\end{frame}
+
+% --- Slide 1: Inferential Normality Reassessment ---
+\begin{frame}{Normality Reassessment Post-Outlier Removal}
+    \begin{table}
+        \centering
+        \small
+        \begin{tabular}{l c c c}
+            \toprule
+            \textbf{Variable} & \textbf{Statistical Test} & \textbf{$p$-value} & \textbf{Decision ($\alpha = 0.05$)} \\
+            \midrule
+            $X_2$ & Shapiro-Wilk & 0.1742 & Accept $H_0$ \\
+            $X_2$ & Anderson-Darling & 0.1984 & Accept $H_0$ \\
+            $X_2$ & Kolmogorov-Smirnov & 0.6339 & Accept $H_0$ \\
+            \midrule
+            $X_3$ & Shapiro-Wilk & 0.3713 & Accept $H_0$ \\
+            $X_3$ & Anderson-Darling & 0.3124 & Accept $H_0$ \\
+            $X_3$ & Kolmogorov-Smirnov & 0.8700 & Accept $H_0$ \\
+            \bottomrule
+        \end{tabular}
+        \caption{Summary of Normality Tests After Removing Outlier 46}
+    \end{table}
+
+    \vspace{0.2cm}
+    \textbf{Interpretation:}
+    \begin{itemize}
+        \item \textbf{Statistical Stability:} The removal of outlier 46 makes the columns normal after the box cox transformation.
+        \item \textbf{Uniform Adherence:} Both $X_2$ and $X_3$ now comfortably exceed the strict $\alpha = 0.05$ threshold across all diagnostic metrics, formally proving that the underlying probability densities are now Gaussian.
+    \end{itemize}
+\end{frame}
+
+% --- Slide 2: Visual Corroboration ---
+\begin{frame}{Visual Corroboration of Marginal Normality}
+    \begin{center}
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \includegraphics[width=\linewidth]{Final QQ Plot X2}
+            
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \includegraphics[width=\linewidth]{Final QQ Plot X3}
+            
+        \end{minipage}
+    \end{center}
+
+    \vspace{0.3cm}
+    \begin{itemize}
+    \item \textbf{Tail Behavior:} Deviations are observed in the tails for both $X_2$ and $X_3$, but this is slight improvement over our original QQ plots.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Comparative Assessment of Multivariate Transformations}
+    \textbf{Transformation Specifications:}
+    \begin{itemize}
+        \item \textbf{$T_1$ (Initial):} Box-Cox transformation on $X_2$ and $X_3$; $X_1$ and $X_4$ left unchanged.
+        \item \textbf{$T_2$ (Alternative):} Box-Cox on $X_2$ and $X_3$ with an additional Square Root transformation on $X_4$.
+    \end{itemize}
+
+    \vspace{0.2cm}
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{%
+        \begin{tabular}{l c c c c}
+            \toprule
+            \textbf{MVN Diagnostic Test} & \multicolumn{2}{c}{\textbf{$T_1$ (Box-Cox 2,3)}} & \multicolumn{2}{c}{\textbf{$T_2$ (Box-Cox 2,3 + Sqrt 4)}} \\
+            \cmidrule(lr){2-3} \cmidrule(lr){4-5}
+            & \textbf{$p$-value} & \textbf{Decision} & \textbf{$p$-value} & \textbf{Decision} \\
+            \midrule
+            Mardia Skewness & $0.046$ & \textbf{Reject $H_0$} & $0.066$ & Accept $H_0$ \\
+            Mardia Kurtosis & $0.076$ & Accept $H_0$ & $0.084$ & Accept $H_0$ \\
+            Henze-Zirkler (HZ) & $0.064$ & Accept $H_0$ & $0.036$ & \textbf{Reject $H_0$} \\
+            Royston & $0.395$ & Accept $H_0$ & $0.475$ & Accept $H_0$ \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+
+    \vspace{0.4cm}
+    \textbf{Final Decision:} $T_1$ is selected because it provides stronger global support for MVN (passing the Henze-Zirkler omnibus test), whereas $T_2$ introduces distortion at the multivariate level.
+\end{frame}
+
+\begin{frame}{Re-assessment of Covariance Homogeneity}
+    \begin{columns}[c]
+        % Left Column: Diagnostic Plot
+        \begin{column}{0.48\textwidth}
+            \centering
+            \includegraphics[width=\linewidth]{Box M 2}
+        \end{column}
+        
+        % Right Column: Empirical Table & Interpretation
+        \begin{column}{0.52\textwidth}
+            \begin{table}
+                \centering
+                \resizebox{\textwidth}{!}{%
+                \begin{tabular}{>{\raggedright\arraybackslash}p{3.5cm} c}
+                    \toprule
+                    \textbf{Test Statistic / Metric} & \textbf{Empirical Value} \\
+                    \midrule
+                    $\chi^2$ (approximate) & $16.084$ \\
+                    \addlinespace
+                    Degrees of Freedom & $10$ \\
+                    \addlinespace
+                    $p$-value & $0.09725$ \\
+                    \midrule
+                    \textbf{Statistical Decision} & \textbf{Fail to reject $H_0$} \\
+                    \bottomrule
+                \end{tabular}%
+                }
+            \end{table}
+            
+            \vspace{0.3cm}
+            \textbf{Interpretation:} 
+            \begin{itemize}
+                \item \textbf{Statistical:} With $p > 0.05$, we no longer have sufficient evidence to conclude covariance matrices differ.
+                \item \textbf{Visual:} Substantial overlap in confidence intervals geometrically corroborates the recovered variance stability.
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Formal Multivariate Inference (Post-Transformation)}
+    \begin{columns}[T]
+        % Left Column: MANOVA
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{MANOVA Results}
+            \vspace{0.1cm}
+            \begin{table}
+                \resizebox{\textwidth}{!}{%
+                \begin{tabular}{l c}
+                    \toprule
+                    \textbf{Test Statistic} & \textbf{Empirical Value} \\
+                    \midrule
+                    Wilks' $\Lambda$ & $0.50085$ \\
+                    Pillai's Trace & $0.49915$ \\
+                    Approx. $F_{(4, 40)}$ & $9.9661$ \\
+                    $p$-value & $1.084 \times 10^{-5}$ \\
+                    \midrule
+                    \multicolumn{2}{>{\raggedright\arraybackslash}p{6.5cm}}{\textbf{Interpretation:} Due to the rank constraint ($k=2$), all statistics yield a unified $F$-ratio. Wilks' $\Lambda$ indicates $\sim 50\%$ of the total variance is explained by group membership. We strictly reject equal centroids.} \\
+                    \bottomrule
+                \end{tabular}%
+                }
+            \end{table}
+        \end{column}
+        
+        % Right Column: Hotelling's T^2
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{Hotelling's $T^2$ Results}
+            \vspace{0.1cm}
+            \begin{table}
+                \resizebox{\textwidth}{!}{%
+                \begin{tabular}{l c}
+                    \toprule
+                    \textbf{Test Metric} & \textbf{Empirical Value} \\
+                    \midrule
+                    $T^2$ Statistic & $42.854$ \\
+                    Numerator $df$ & $4$ \\
+                    Denominator $df$ & $40$ \\
+                    $p$-value & $1.084 \times 10^{-5}$ \\
+                    \midrule
+                    \multicolumn{2}{>{\raggedright\arraybackslash}p{6.5cm}}{\textbf{Interpretation:} The test directly evaluates the separation of mean vectors. The highly significant $p$-value definitively rejects $H_0: \boldsymbol{\mu}_0 = \boldsymbol{\mu}_1$, confirming statistically distinct profiles post-transformation.} \\
+                    \bottomrule
+                \end{tabular}%
+                }
+            \end{table}
+        \end{column}
+    \end{columns}
+
+    \vspace{-0.2cm}
+    \begin{itemize}
+        \item Because the response variable consists of exactly two cohorts, MANOVA and Hotelling's $T^2$ are mathematically equivalent. They yield perfectly identical $p$-values.
+        \item \textbf{Definitive Modeling Mandate:} The rejection provides evidence that the groups differ significantly, cleanly justifying the derivation of linear discriminant boundaries.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Predictive Performance Synthesis (Post-Transformation)}
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{%
+        \begin{tabular}{l c c c c >{\raggedright\arraybackslash}p{7cm}}
+            \toprule
+            \textbf{Model} & \textbf{Acc.} & \textbf{Prec.} & \textbf{Rec.} & \textbf{$F_1$} & \textbf{Analytical Profile} \\
+            \midrule
+            \textbf{LDA} & \textbf{0.836} & \textbf{0.851} & 0.860 & \textbf{0.839} & \textbf{Optimal Global Performance:} Superior overall classifier; maintains harmonic balance (symmetric discriminative power) without biasing toward specific error types. \\
+            \addlinespace
+            \textbf{Logistic} & 0.829 & 0.847 & 0.852 & 0.832 & \textbf{Comparable Benchmark:} Highly competitive alternative; formally corroborates that a linear decision surface is mathematically appropriate, stable for data. \\
+            \addlinespace
+            \textbf{QDA} & 0.789 & 0.779 & \textbf{0.871} & 0.804 & \textbf{Asymmetric Sensitivity:} Maximizes Recall (sensitivity) but at the direct expense of Precision and Accuracy, indicating a significantly looser, non-linear classification boundary. \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+
+    \vspace{-0.1cm}
+    \begin{itemize}
+        \item \textbf{Definitive Selection:} Having successfully stabilized the variance via Box-Cox transformations, LDA provides the definitive, optimal mathematical balance across all evaluation dimensions.
+        \item \textbf{Contextual Application of QDA:} QDA should only be deployed in strictly asymmetrical risk environments where prioritizing the capture of the positive class (Recall) outweighs the operational cost of elevated false positives (Type I errors).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Geometric Analysis of Decision Boundaries (Post-Transformation)}
+    \begin{center}
+        \includegraphics[width=0.65\textwidth]{Fitting the dataset (transformed)}
+    \end{center}
+
+    \begin{itemize}
+\item On the whole data, QDA is still outperformed by the other two methods, but much better compared to the earlier case.
+\item In contrast, LDA and Logistic Regression definitively outperform QDA on this overall data, providing much more stable, generalized linear boundaries that are not prone to such severe overfitting.
+\item \textbf{Misclassification Counts:}
+\begin{itemize}
+\item \textbf{LDA:} 5 total misclassifications (3 from Group 0 in the blue region, 2 from Group 1 in the red region).
+\item \textbf{Logistic Regression:} 5 total misclassifications (3 from Group 0, 2 from Group 1).
+\item \textbf{QDA:} 6 total misclassifications (6 points from Group 0 are stranded entirely outside the elliptical boundary).
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Principal Component Analysis: Covariance Structure}
+    \begin{columns}[c]
+        % Left Column: Scree Plot
+        \begin{column}{0.6\textwidth}
+            \centering
+            \includegraphics[width=\linewidth]{pca}
+            \vspace{0.1cm}
+            \scriptsize{Scree Diagnostic: Variance Explained}
+        \end{column}
+        
+        % Right Column: PCA Loadings Table
+        \begin{column}{0.4\textwidth}
+            \begin{table}
+                \centering
+                \resizebox{\textwidth}{!}{%
+                \begin{tabular}{l r r r r}
+                    \toprule
+                    \textbf{Feature} & \textbf{PC1} & \textbf{PC2} & \textbf{PC3} & \textbf{PC4} \\
+                    \midrule
+                    $X_1$ & $0.6201$ & $-0.1769$ & $0.1967$ & $-0.7385$ \\
+                    $X_2$ & $0.5999$ & $-0.0836$ & $0.4630$ & $0.6471$ \\
+                    $X_3$ & $0.5019$ & $0.2037$ & $-0.8266$ & $0.1525$ \\
+                    $X_4$ & $0.0601$ & $0.9593$ & $0.2522$ & $-0.1122$ \\
+                    ev & $2.28644641$ & $1.03774969$ & $0.55323844$ & $0.12236004$ \\
+                    \bottomrule
+                \end{tabular}%
+                }
+            \end{table}
+            \vspace{0.1cm}
+            \centering
+            \scriptsize{Eigenvector Loadings (Rotation Matrix)}
+        \end{column}
+    \end{columns}
+
+    \vspace{0.2cm}
+    \begin{itemize}
+        \item \textbf{High Compressibility:} The first orthogonal axis captures $57.32\%$ of the global variance. The first two orthogonal axes cumulatively capture $83.11\%$ of the global variability and also Kaiser Criterion is confirming that the essential information within the $\mathbb{R}^4$ feature space can be efficiently compressed into a lower-dimensional subspace.
+        \item \textbf{Orthogonal Feature Behavior:} The loadings prove that $X_1$, $X_2$, and $X_3$ operate synchronously to define the primary shared axis (PC1). In stark contrast, $X_4$ behaves orthogonally, contributing almost exclusively to the isolated secondary dimension (PC2).
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Univariate Normality of Principal Components}
+    \begin{figure}
+        \centering
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \includegraphics[width=\linewidth]{QQ_pc_1}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \includegraphics[width=\linewidth]{QQ_pc_2}
+        \end{minipage}
+    \end{figure}
+
+    \vspace{0.2cm}
+
+    \begin{itemize}
+        \item \textbf{Gaussian Conformity:} Both orthogonal axes demonstrate a highly stable Gaussian approximation with minor tail deviation, which is a big improvement over our original and earlier transformed data.
+       
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Formal Statistical Inference: Normality of PCs}
+    \begin{columns}[T]
+        % Left Column: PC1
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{Evaluation of PC1}
+            \vspace{0.1cm}
+            \begin{table}
+                \resizebox{\textwidth}{!}{%
+                \begin{tabular}{l c c}
+                    \toprule
+                    \textbf{Diagnostic Test} & \textbf{Statistic} & \textbf{$p$-value} \\
+                    \midrule
+                    Shapiro-Wilk ($W$) & $0.9669$ & $0.2122$ \\
+                    Anderson-Darling ($A$) & $0.4931$ & $0.2068$ \\
+                    Kolmogorov-Smirnov ($D$) & $0.0873$ & $0.8444$ \\
+                    \bottomrule
+                \end{tabular}%
+                }
+            \end{table}
+            \vspace{0.1cm}
+            \justifying
+            \scriptsize{\textbf{Interpretation:} All tests yield non-significant $p$-values ($p > 0.05$). We fail to reject $H_0$, which implies PC1 adequately satisfies univariate normality.}
+        \end{column}
+        
+        % Right Column: PC2
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{Evaluation of PC2}
+            \vspace{0.1cm}
+            \begin{table}
+                \resizebox{\textwidth}{!}{%
+                \begin{tabular}{l c c}
+                    \toprule
+                    \textbf{Diagnostic Test} & \textbf{Statistic} & \textbf{$p$-value} \\
+                    \midrule
+                    Shapiro-Wilk ($W$) & $0.9764$ & $0.4665$ \\
+                    Anderson-Darling ($A$) & $0.3126$ & $0.5369$ \\
+                    Kolmogorov-Smirnov ($D$) & $0.0736$ & $0.9491$ \\
+                    \bottomrule
+                \end{tabular}%
+                }
+            \end{table}
+            \vspace{0.1cm}
+            \justifying
+            \scriptsize{\textbf{Interpretation:} The substantially high $p$-values strongly maintain the null hypothesis, corroborating the tight linear Q-Q alignment and confirming PC2 behaves as a highly symmetric, normal variable.}
+        \end{column}
+    \end{columns}
+
+    \vspace{0.4cm}
+    \begin{itemize}
+        \item \textbf{Confirmed Normality:} The synthesis of graphical and formal diagnostic evidence definitively establishes that the derived principal components strictly adhere to theoretical Gaussian distributions.
+        \item \textbf{Modeling Justification:} By effectively absorbing and normalizing the variance of the original features, this structural integrity thoroughly justifies the deployment of PC1 and PC2 as independent, parametric inputs for downstream multivariate modeling.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Multivariate Normality of Principal Components}
+    \begin{table}
+        \centering
+        \resizebox{\textwidth}{!}{%
+        \begin{tabular}{l c c c l}
+            \toprule
+            \textbf{Diagnostic Test} & \textbf{Group 0 ($p$)} & \textbf{Group 1 ($p$)} & \textbf{Global/Pooled ($p$)} & \textbf{Consensus Decision} \\
+            \midrule
+            \textbf{Mardia's Skewness} & $0.540$ & $0.993$ & $0.664$ & \textbf{Accept $H_0$:} Normal \\
+            \addlinespace
+            \textbf{Mardia's Kurtosis} & $0.469$ & $0.422$ & $0.527$ & \textbf{Accept $H_0$:} Normal \\
+            \addlinespace
+            \textbf{Henze-Zirkler (HZ)} & $0.439$ & $0.896$ & $0.845$ & \textbf{Accept $H_0$:} Normal \\
+            \addlinespace
+            \textbf{Royston's Test} & $0.271$ & $0.347$ & $0.409$ & \textbf{Accept $H_0$:} Normal \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+
+    \vspace{0.4cm}
+    \begin{itemize}
+        \item \textbf{Definitive Structural Adherence:} The unanimous non-significance ($p > 0.05$) across all diagnostic frameworks provides strong evidence towards multivariate Gaussian distribution of the PCs both conditionally within cohorts and globally.
+
+    \end{itemize}
+\end{frame}
+
+
+
+\begin{frame}{Box M Test: Homogeneity of Covariance}
+    \begin{columns}
+        % Left Column: Image
+        \begin{column}{0.5\textwidth}
+            \begin{figure}
+                \centering
+                \includegraphics[width=\textwidth]{Box_M_pca.png}
+            \end{figure}
+        \end{column}
+
+        % Right Column: Results and Interpretation
+        \begin{column}{0.5\textwidth}
+            % Right Top: Test Results
+            \textbf{Test Output}
+            \begin{block}{}
+                \footnotesize
+                \textbf{Box's M-test for Homogeneity} \\
+                \vspace{1mm}
+                \begin{tabular}{ll}
+                    \textbf{Chi-Sq (approx.)} & 2.102 \\
+                    \textbf{df} & 3 \\
+                    \textbf{p-value} & \textbf{0.5515} \\
+                \end{tabular}
+            \end{block}
+
+            \vspace{0.2cm}
+
+            % Right Bottom: Interpretations
+            \textbf{Key Observations}
+            \begin{itemize}
+                \item \footnotesize \textbf{Statistical Non-Significance:} The high $p$-value ($0.5515 > 0.05$) indicates we fail to reject the null hypothesis.
+                \item \footnotesize \textbf{Equal Covariance Matrices:} There is no statistical evidence of differing covariance matrices between the cohorts.
+                \item \footnotesize \textbf{Visual Alignment:} Confidence intervals for Group 0 and 1 show significant overlap, straddling the pooled estimate.
+                \item \footnotesize \textbf{PCA Impact:} PCA has explicitly stabilized variance structures, optimizing the data for discriminant analysis.
+            \end{itemize}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Multivariate Inference in Principal Component Space}
+    \begin{columns}[T]
+        % Left Column: MANOVA
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{Formal MANOVA Results}
+            \vspace{0.1cm}
+            \begin{table}
+                \resizebox{\textwidth}{!}{%
+                \begin{tabular}{l c c}
+                    \toprule
+                    \textbf{Test Statistic} & \textbf{Value} & \textbf{Approx $F_{(2, 43)}$} \\
+                    \midrule
+                    Wilks' $\Lambda$ & $0.5562$ & $17.157$ \\
+                    Pillai's Trace & $0.4438$ & $17.157$ \\
+                    $p$-value & \multicolumn{2}{c}{$3.327 \times 10^{-6}$} \\
+                    \bottomrule
+                \end{tabular}%
+                }
+            \end{table}
+            \vspace{0.1cm}
+            \justifying
+            \scriptsize{\textbf{Interpretation:} Given the binary group structure ($k=2$), all metrics collapse to an identical $F$-statistic. The tests decisively reject equivalent population centroids, confirming that a substantial proportion of structural variation is explained by group membership.}
+        \end{column}
+        
+        % Right Column: Hotelling's T^2
+        \begin{column}{0.4\textwidth}
+            \centering
+            \textbf{Hotelling's $T^2$ Results}
+            \vspace{0.1cm}
+            \begin{table}
+                \resizebox{\textwidth}{!}{%
+                \begin{tabular}{l c}
+                    \toprule
+                    \textbf{Metric} & \textbf{Empirical Value} \\
+                    \midrule
+                    $T^2$ Statistic & $35.112$ \\
+                    Numerator $df$ & $2$ \\
+                    Denominator $df$ & $43$ \\
+                    $p$-value & $3.327 \times 10^{-6}$ \\
+                    \bottomrule
+                \end{tabular}%
+                }
+            \end{table}
+            \vspace{0.1cm}
+            \justifying
+            \scriptsize{\textbf{Interpretation:} Explicitly quantifies the scaled squared Mahalanobis distance within the 2D orthogonal space. The astronomically small $p$-value strictly rejects $H_0: \boldsymbol{\mu}_0 = \boldsymbol{\mu}_1$, confirming profound geometric separation.}
+        \end{column}
+    \end{columns}
+
+    \vspace{0.4cm}
+    \begin{itemize}
+        \item \textbf{Mathematical Equivalence:} Transforming the $T^2$ statistic yields the exact $F$-ratio ($17.157$) observed in the MANOVA framework. The identical $p$-values confirm the same inference of rejecting the null.
+        \item \textbf{Preservation of Signal:} This unified statistical synthesis provides strong evidence regarding the fact that the dimensionality reduction via PCA successfully preserved the critical classification signal, maintaining statistically profound group separation in the lower-dimensional subspace.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Predictive Performance: Dimensionality Assessment}
+    \begin{columns}[T]
+        % Left Column: PC1 Only
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{First Component (PC1 Only)}
+            \vspace{0.1cm}
+            \begin{table}
+                \resizebox{\textwidth}{!}{%
+                \begin{tabular}{l c c c c}
+                    \toprule
+                    \textbf{Model} & \textbf{Acc} & \textbf{Prec} & \textbf{Rec} & \textbf{$F_1$} \\
+                    \midrule
+                    LDA & $0.799$ & $0.793$ & $0.876$ & $0.816$ \\
+                    Logistic & $0.805$ & $0.815$ & $0.845$ & $0.814$ \\
+                    QDA & $0.798$ & $0.788$ & $0.881$ & $0.815$ \\
+                    \bottomrule
+                \end{tabular}%
+                }
+            \end{table}
+            \vspace{0.1cm}
+            \justifying
+            \scriptsize{\textbf{Interpretation:} Logistic Regression proves marginally superior in absolute Accuracy and Precision, while QDA maximizes Recall (sensitivity) at a direct geometric cost to its classification boundary.}
+        \end{column}
+        
+        % Right Column: PC1 and PC2
+        \begin{column}{0.48\textwidth}
+            \centering
+            \textbf{First Two Components (PC1 \& PC2)}
+            \vspace{0.1cm}
+            \begin{table}
+                \resizebox{\textwidth}{!}{%
+                \begin{tabular}{l c c c c}
+                    \toprule
+                    \textbf{Model} & \textbf{Acc} & \textbf{Prec} & \textbf{Rec} & \textbf{$F_1$} \\
+                    \midrule
+                    LDA & $0.791$ & $0.786$ & $0.865$ & $0.807$ \\
+                    Logistic & $0.800$ & $0.809$ & $0.844$ & $0.809$ \\
+                    QDA & $0.796$ & $0.789$ & $0.870$ & $0.811$ \\
+                    \bottomrule
+                \end{tabular}%
+                }
+            \end{table}
+            \vspace{0.1cm}
+            \justifying
+            \scriptsize{\textbf{Interpretation:} Indicates strict stagnation of overall efficacy. Integrating the secondary orthogonal axis yields no harmonic enhancement ($F_1$ plateau). The models retain their operational nuances, but fail to extract any supplementary predictive power.}
+        \end{column}
+    \end{columns}
+
+    \vspace{0.4cm}
+    \begin{itemize}
+        \item \textbf{Dimensional Redundancy:} The lack of predictive enhancement perfectly aligns with our structural diagnostics. PC2 is dominated by uninformative variance ($X_4$) that is strictly orthogonal to the categorical group separation.
+        
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Fitting the Whole Dataset: Geometric Analysis}
+    \begin{center}
+        \includegraphics[width=0.7\textwidth]{Fitting the dataset (PC1).jpeg}
+    \end{center}
+
+    \vspace{-0.2cm}
+    \begin{itemize}
+        \item \footnotesize \textbf{Orthogonal Dominance of PC1:} Separation is driven almost exclusively by the primary principal component. The verticality of the boundaries proves that PC2 provides virtually zero additive discriminatory power.
+        
+        \item \footnotesize There is a significant similarity of classification boundaries of LDA and Logistic Regression. This reinforces that a linear decision surface is highly optimal for this reduced feature space.
+        
+        \begin{itemize}
+        \item \footnotesize \textbf{LDA:} 4 total misclassifications (3 from Group 0 in the blue region, 1 from Group 1 in the red region).
+        \item \footnotesize \textbf{Logistic Regression:} 7 total misclassifications.
+        \item \footnotesize \textbf{QDA:} 6 total misclassifications.
+    \end{itemize}
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Synthesized Conclusion: Dimensionality Reduction via PCA}
+    \begin{itemize}
+        \item \textbf{Solved Data Issues:} PCA compressed our four variables and fixed the non-normality issues, making the data perfectly suited for standard statistical modeling.
+        
+        \vspace{0.2cm}
+        \item \textbf{Preserved Group Separation:} Formal tests confirm that the new PCA space successfully maintains the distinct, mathematically proven separation between the two groups.
+        
+        \vspace{0.2cm}
+        \item \textbf{Clear Variable Roles:} The core metrics ($X_1, X_2, X_3$) work together to build the primary axis (PC1), while the independent metric ($X_4$) completely dominates the secondary axis (PC2).
+        
+        \vspace{0.2cm}
+        \item \textbf{PC1 Drives Prediction:} PC1 holds almost all the predictive power. Simple linear models (like LDA) using just PC1 provide the best, most efficient classification boundaries.
+        
+        \vspace{0.2cm}
+        \item \textbf{Why Retain PC2?:} Although PC2 does not help predict group membership, we strictly retain it because it captures a massive portion of the dataset's overall variance (the $X_4$ signal) that cannot be structurally ignored.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Two-Factor Model Attempt: Identification Constraints}
+    \textbf{Computational Error Output:}
+    \footnotesize
+    \begin{verbatim}
+> fa_2_varimax <- factanal(df_vars, factors = 2, rotation = "varimax", 
+                           scores = "regression")
+Error in factanal(df_vars, factors = 2, rotation = "varimax", 
+                  scores = "regression") : 
+  2 factors are too many for 4 variables
+    \end{verbatim}
+    \normalsize
+
+    \vspace{0.4cm}
+    \begin{itemize}
+        \item \textbf{Degrees of Freedom Constraint:} In Maximum Likelihood Factor Analysis, model identification requires a non-negative number of degrees of freedom ($df$). For $p$ observed variables and $k$ latent factors, the constraint is defined by the equation:
+        $$ df = \frac{1}{2}[(p - k)^2 - p - k] $$
+        
+        \item \textbf{Strict Under-Identification:} For our specific feature space ($p = 4$), attempting to extract $k = 2$ factors yields $df = \frac{1}{2}[(4 - 2)^2 - 4 - 2] = -1$. Because the degrees of freedom drop strictly below zero, the sample covariance matrix lacks sufficient unique elements to estimate the parameter matrices, rendering the two-factor model mathematically impossible.
+    \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{Single Factor Model Analysis and Rotation}
+\textbf{Quartimax error}
+\scriptsize \begin{verbatim}
+> fa_1_quartimax <- factanal(df_vars, factors = 1, 
+    rotation = "quartimax", scores = "regression")
+Error in GPForth(A, Tmat = Tmat, normalize = normalize, ... : 
+    rotation does not make sense for single factor models.
+        \end{verbatim}
+    
+
+\vspace{-0.3cm}
+\begin{table}[]
+    \centering
+    \footnotesize
+    \begin{tabular}{lcccc}
+        \toprule
+        \textbf{Variable} & \textbf{Uniqueness} & \textbf{None} & \textbf{Varimax} & \textbf{Promax} \\
+        \midrule
+        x1 & 0.005 & 0.997 & 0.997 & 0.997 \\
+        x2 & 0.260 & 0.860 & 0.860 & 0.860 \\
+        x3 & 0.673 & 0.572 & 0.572 & 0.572 \\
+        x4 & 0.997 & -0.051 & -0.051 & -0.051 \\
+        \midrule
+        \multicolumn{2}{l}{\textbf{SS Loadings}} & 2.064 & 2.064 & 2.064 \\
+        \multicolumn{2}{l}{\textbf{Proportion Var}} & 0.516 & 0.516 & 0.516 \\
+        \multicolumn{2}{l}{\textbf{p-value}} & 0.12 & 0.12 & 0.12 \\
+        \bottomrule
+    \end{tabular}
+    
+    \vspace{-0.1cm}
+\end{table}
+
+\vspace{-0.2cm}
+\normalsize
+\begin{itemize}
+    \item \textbf{Invalidity of Quartimax ($k=1$):} Rotation geometrically requires $\ge 2$ dimensions. For a single factor, the rotation matrix is just a $1 \times 1$ scalar ($\pm 1$). The \texttt{GPForth} algorithm throws an error because it expects a multidimensional matrix to maximize loading variances.
+    \item \textbf{Equivalence to Unrotated:} R's \texttt{varimax} and \texttt{promax} wrappers silently bypass the dimensionality error. However, mathematically, applying a $\pm 1$ scalar transformation to a $p \times 1$ loading matrix simply resolves to the original unrotated vector.
+    \item \textbf{Invariance of Model Fit (p-values):} The $\chi^2$ statistic evaluates how well the $k=1$ model reproduces the sample correlation matrix. Rotation redistributes variance but does not alter the total variance explained or the fitted covariance matrix. Thus, the goodness-of-fit (and its p-value) is mathematically invariant to rotation.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Interpretation and Methodological Implications}
+
+\vspace{0.3cm}
+\textbf{Severe Structural Limitations of FA ($k=1$)}
+\begin{itemize}
+    \item \textbf{Information Loss:} Retaining only 51.6\% of total variance discards nearly half of the dataset's empirical variation.
+    \item \textbf{Mathematical Omission:} Because FA strictly isolates shared covariance, it treats $X_4$ entirely as unique "noise" (uniqueness $\approx 0.997$).
+\end{itemize}
+
+\vspace{0.3cm}
+\textbf{Comparison with PCA Representation}
+\begin{itemize}
+    \item \textbf{Total Variance Preservation:} The 2-component PCA successfully retains $>83\%$ of the geometric information.
+    \item \textbf{Orthogonal Isolation:} PCA preserves non-conforming metrics like $X_4$ by isolating them into distinct components, yielding a faithful lower-dimensional representation.
+\end{itemize}
+
+\end{frame}
+
+\begin{frame}{Omission of Pre-FA Diagnostics}
+    \textbf{Rationale for the unreliability Bartlett's Test and LRT:}
+    \vspace{0.2cm}
+    
+    \begin{itemize}
+        \item \textbf{Violation of Multivariate Normality:} Both Bartlett's Test of Sphericity and the Likelihood Ratio Test (in Maximum Likelihood FA) strictly assume multivariate normality. As established, the \textit{raw data} exhibits some structural violations prior to PCA transformation.
+        
+        \item \textbf{Small Sample Size Constraints:} The LRT relies on asymptotic $\chi^2$ approximations. With a highly constrained sample size ($n \approx 46$), these asymptotic properties fail to hold, rendering the $p$-values statistically biased and unreliable for evaluating goodness-of-fit.
+        
+    \end{itemize}
+\end{frame}
+
+\begin{frame}{Kaiser-Meyer-Olkin (KMO) Test: Mathematical Foundations}
+
+\textbf{Purpose and Relevance}
+\begin{itemize}
+    \item \textbf{Objective:} To verify whether the observed correlation matrix is genuinely factorable by assessing the proportion of variance among variables that might be common variance.
+    \item \textbf{Our Application:} Deployed to rigorously diagnose the structural limitations of our previous models and understand why they struggled to integrate all four variables into a unified latent construct.
+\end{itemize}
+
+\textbf{Mathematical Formulation}
+\begin{itemize}
+    \item The statistic evaluates the magnitudes of zero-order Pearson correlations ($r_{ij}$) against partial correlations ($q_{ij}$), defined mathematically as:
+    $$ KMO = \frac{\sum{\sum_{i \neq j} r_{ij}^2}}{\sum{\sum_{i \neq j} r_{ij}^2} + \sum{\sum_{i \neq j} q_{ij}^2}} = MSA $$
+    
+\[MSA_i = \frac{\sum_{j \neq i} r_{ij}^2}{\sum_{j \neq i} r_{ij}^2 + \sum_{j \neq i} q_{ij}^2}\]
+
+    \item \textbf{Threshold:} Values $< 0.60$ indicate that partial correlations are disproportionately large, rendering the matrix structurally unacceptable for factor extraction.
+\end{itemize}
+
+\end{frame}
+
+% --- SLIDE 2 ---
+
+\begin{frame}{KMO Empirical Results and Methodological Conclusion}
+
+\textbf{Empirical Results}
+\begin{table}[]
+    \centering
+    \footnotesize
+    \caption{Measure of Sampling Adequacy (MSA)}
+    \begin{tabular}{lcccc|c}
+        \toprule
+         & $\mathbf{X_1}$ & $\mathbf{X_2}$ & $\mathbf{X_3}$ & $\mathbf{X_4}$ & \textbf{Overall MSA} \\
+        \midrule
+        \textbf{Item MSA} & 0.54 & 0.57 & 0.71 & 0.14 & \textbf{0.56} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\vspace{0.1cm}
+\begin{itemize}
+    \item \textbf{Weak overall structure:} The overall MSA of 0.56 is right at the lower bound of acceptability, suggesting the variables do not share enough common variance to confidently support Exploratory Factor Analysis (EFA).
+    
+    \item \textbf{Problem with $X_4$:} $X_4$ has an MSA of 0.14, which is extremely low. This indicates it behaves largely independently and does not fit well into any common factor.
+    
+    \item \textbf{Rejecting factor analysis:} EFA is meant to model shared variance across variables. Applying it here would effectively treat $X_4$ as noise and exclude its contribution. For that reason, it is more appropriate to reject EFA and use a method like PCA, which retains total variance, including the unique contribution of $X_4$.
+\end{itemize}
+
+\end{frame}
+
+% --- SLIDE 1: NAIVE BAYES FUNDAMENTALS (REVISED) ---
+\begin{frame}{Naive Bayes Classification: Theoretical Framework}
+    \textbf{1. Bayes' Theorem}
+    The posterior probability of class $k \in \{0, 1\}$ given observation $\mathbf{x}$ is:
+    \[ P(Y = k | \mathbf{x}) = \frac{P(\mathbf{x} | Y = k) P(Y = k)}{P(\mathbf{x})} \]
+    
+    \textbf{2. Naive Independence Assumption}
+    Assumes features are conditionally independent given the class label (Even though the groupwise sample covariance matrices are not identity, but for the sake of the classification we are taking the assumption):
+    \[ P(\mathbf{x} | Y = k) = \prod_{j=1}^{4} P(x_j | Y = k) \]
+    
+    \textbf{3. Prior Probability Estimation}
+    Estimated by relative class frequency: $\hat{P}(Y = k) = \frac{n_k}{n}$.
+
+    \vspace{0.3cm}
+
+    \begin{exampleblock}{4. Classification Rule}
+        Assign the observation to the class that maximizes the log-posterior:
+        \[ \hat{y} = \arg \max_{k \in \{0, 1\}} \left[ \log\hat{P}(Y = k) + \sum_{j=1}^{4} \log P(x_j^* | Y = k) \right] \]
+    \end{exampleblock}
+\end{frame}
+
+% --- SLIDE 2: POSTERIOR PROBABILITY VALUES (REVISED) ---
+\begin{frame}{Posterior Probability Values (Original Dataset)}
+    Below is a sample of the 46 posterior probabilities calculated for the dataset:
+    \begin{table}
+        \centering
+        \small
+        \begin{tabular}{ccc}
+            \toprule
+            Observation & $P(Y=0 | \mathbf{x})$ & $P(Y=1 | \mathbf{x})$ \\
+            \midrule
+            1 & 1.0000 & $5.29 \times 10^{-21}$ \\
+            3 & 0.5985 & 0.4015 \\
+            13 & 0.3234 & 0.6766 \\
+            22 & $4.79 \times 10^{-4}$ & 0.9995 \\
+            26 & $4.30 \times 10^{-12}$ & 1.0000 \\
+            46 & $3.95 \times 10^{-19}$ & 1.0000 \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+
+    \vspace{0.2cm}
+
+    \begin{alertblock}{Key Insight}
+        The model displays extreme confidence (probabilities near 0 or 1) for most observations, while a few (e.g., Obs 3, 13) show higher overlap and uncertainty.
+    \end{alertblock}
+\end{frame}
+
+% --- SLIDE 3: TRAINING DATA PERFORMANCE (REVISED) ---
+\begin{frame}{Model Performance on Whole Training Data}
+    \begin{columns}
+        \column{0.45\textwidth}
+        \textbf{Confusion Matrix}:
+        \begin{table}
+            \centering
+            \small
+            \begin{tabular}{lcc}
+                \toprule
+                 & Pred 0 & Pred 1 \\
+                \midrule
+                True 0 & 18 & 3 \\
+                True 1 & 1 & 24 \\
+                \bottomrule
+            \end{tabular}
+        \end{table}
+        
+        \column{0.55\textwidth}
+        \begin{exampleblock}{Key Metrics}
+            \small
+            \begin{itemize}
+                \item Accuracy: 91.30\%
+                \item Recall: 96.00\%
+                \item Precision: 88.89\%
+                \item F1 Score: 92.31\%
+            \end{itemize}
+        \end{exampleblock}
+    \end{columns}
+    
+    \vspace{0.2cm}
+    
+    \begin{alertblock}{Interpretations \& Key Observations}
+        \footnotesize
+        \begin{itemize}
+            \item \textbf{High Accuracy:} Correctly identifies 42/46 firms in the training set.
+            \item \textbf{Asymmetric Error:} More False Positives (3) than False Negatives (1), suggesting Group 0 observations are more likely to appear as Group 1.
+            \item \textbf{High Sensitivity:} Missing only 1 bankrupt case is critical for reducing financial risk in practical assessments.
+            \item \textbf{In-Sample Optimistic Bias:} Because the model is evaluated on the exact same dataset used to calculate its posterior probabilities, these metrics are mathematically predisposed to an optimistic bias and likely inflate the true out-of-sample generalization. 
+        \end{itemize}
+    \end{alertblock}
+\end{frame}
+
+% --- SLIDE 4: CROSS-VALIDATION & COMPARISON ---
+\begin{frame}{Performance: Cross-Validation vs. Whole Dataset}
+    \textbf{Monte Carlo Cross-Validation Performance ($B=2000$)}:
+    \begin{table}
+        \centering
+        \begin{tabular}{lccc}
+            \toprule
+            Metric & Whole Dataset & Cross-Validated & Gap (Optimism) \\
+            \midrule
+            Accuracy & 91.30\% & 86.19\% & -5.11\% \\
+            Recall  & 96.00\% & 92.30\% & -3.70\% \\
+            Precision & 88.89\% & 84.11\% & -4.78\% \\
+            F1 Score & 92.31\% & 86.89\% &  -5.42\% \\
+            \bottomrule
+        \end{tabular}
+    \end{table}
+    \begin{alertblock}{Key Observations}
+        \begin{itemize}
+        \item \textbf{Overfitting:} The 5.11\% accuracy gap represents the optimism bias of the resubstitution method.
+        \item An 86.19\% CV accuracy proves the model remains highly effective on unseen data.
+        \item \textbf{Stability:} The F1 score (86.89\%) confirms that neither precision nor recall disproportionately dominates the model's performance.
+    \end{itemize}
+    \end{alertblock}
+    
+\end{frame}
+
+
+\begin{frame}{Unsupervised $k$-Means: Setup and Geometric Formulation}
+\small
+To examine the intrinsic geometric structure of the dataset independently of class labels ($Y$), unsupervised clustering is applied. The binary outcome is excluded during model fitting and used only for \textit{post-hoc} validation of clustering performance.
+
+\vspace{0.5em}
+\textbf{Model Setup:}
+\begin{itemize}
+    \item The $k$-means algorithm is employed with $k = 2$, reflecting the two underlying financial cohorts.
+    \item The input consists of transformed and standardized features to ensure comparability across dimensions.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{Centroid-Based Formulation:}
+\begin{itemize}
+    \item Each cluster is represented by its centroid (mean vector), which acts as the prototype of that group.
+    \item The algorithm minimizes the distance of each of the point from the closest centroid, and overall the within-cluster dispersion.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{Geometric Interpretation:}
+\begin{itemize}
+    \item Observations are assigned to the nearest centroid.
+    \item The solution depends on initialization and is best suited for approximately spherical, homogeneous clusters.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Cluster--Label Mapping and Post-hoc Evaluation}
+\small
+Clustering is performed entirely independently of the true class labels ($Y$). The $k$-means algorithm operates solely on the feature space and does not use outcome information at any stage of the fitting process.
+
+\vspace{0.5em}
+\textbf{Cluster--Label Mapping and Post-hoc Evaluation}
+\begin{itemize}
+    \item The resulting cluster labels are arbitrary (e.g., Cluster 1 and Cluster 2 have no intrinsic meaning).
+    \item To evaluate performance, clusters are matched to true classes by assigning each cluster the class label that is most frequent within it.
+    \item Equivalently, this corresponds to choosing the label mapping that minimizes classification error.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{Interpretation:}
+\begin{itemize}
+    \item This step does not influence clustering itself; it is purely evaluative.
+    \item It allows direct comparison between unsupervised clusters and known class structure.
+\end{itemize}
+\end{frame}
+\begin{frame}{Clustering Strategies: Design and Comparative Rationale}
+\small
+Three $k$-means-based strategies are considered to evaluate how different sources of structure influence clustering performance.
+
+\vspace{0.5em}
+\textbf{Standard $k$-Means (Baseline):}
+\begin{itemize}
+    \item Uses random initialization and proceeds fully unsupervised.
+    \item Serves as a benchmark for how well the raw geometric structure aligns with the true classes.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{$k$-Means with Supervised Initialization:}
+\begin{itemize}
+    \item Initializes centroids at the true group means, but updates them without further supervision.
+    \item Tests whether improved initialization mitigates convergence to suboptimal local minima.
+\end{itemize}
+
+\vspace{0.5em}
+\textbf{Hybrid LDA + $k$-Means:}
+\begin{itemize}
+    \item First applies LDA to project the data onto a one-dimensional axis maximizing class separation.
+    \item $k$-means is then applied to these scores, effectively clustering in an optimized subspace.
+\end{itemize}
+\end{frame}
+
+
+
+% --- SLIDE 1: APPROACH 1 ALGO ---
+\begin{frame}{Approach 1: Fully Unsupervised K-Means}
+    \textbf{Algorithm Steps:}
+    \begin{enumerate}
+        \item \textbf{Initialization:} Randomly select $k=2$ initial centroids from the data, $\mu_0^{(0)}, \mu_1^{(0)}$.
+        \item \textbf{Assignment:} Assign each observation $x_i$ to the nearest centroid:
+        \[ c_i^{(t)} (label) = \arg \min_k \|x_i - \mu_k^{(t)}\|^2 \]
+        \item \textbf{Update:} Recalculate centroids as the mean of assigned points:
+        \[ \mu_k^{(t+1)} = \frac{1}{|C_k^{(t)}|} \sum_{x_i \in C_k^{(t)}} x_i \]
+        
+        where $C_k^{(t)}$ is the collection of all the label k points at the t'th iteration.
+        \item \textbf{Convergence:} Repeat until assignments no longer change.
+    \end{enumerate}
+    \begin{exampleblock}{Prediction Rule}
+        Assign $x^*$ to cluster $k$ that minimizes Euclidean distance:
+    \[ \hat{c}^* = \arg \min_{k \in \{0,1\}} \|x^* - \hat{\mu}_k\|^2 \]
+    \end{exampleblock}
+    
+\end{frame}
+
+% --- SLIDE 2: ITERATIONS (1-4) ---
+\begin{frame}{K-Means Iterations: Phase I}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \centering \includegraphics[width=0.68\textwidth]{Plain k-mins iteration 0.jpeg} \\
+        \vspace{0.3cm}
+        \centering \includegraphics[width=0.68\textwidth]{Plain k-mins iteration 2.jpeg} \\
+        \column{0.5\textwidth}
+        \centering \includegraphics[width=0.68\textwidth]{Plain k-mins iteration 1.jpeg} \\
+        \vspace{0.3cm}
+        \centering \includegraphics[width=0.68\textwidth]{Plain k-mins iteration 3.jpeg} \\
+    \end{columns}
+\end{frame}
+
+% --- SLIDE 3: ITERATIONS (5-8) ---
+\begin{frame}{K-Means Iterations: Phase II}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \centering \includegraphics[width=0.68\textwidth]{Plain k-mins iteration 4.jpeg} \\
+        \vspace{0.3cm}
+        \centering \includegraphics[width=0.68\textwidth]{Plain k-mins iteration 6.jpeg} \\
+        \column{0.5\textwidth}
+        \centering \includegraphics[width=0.68\textwidth]{Plain k-mins iteration 5.jpeg} \\
+        \vspace{0.3cm}
+        \centering \includegraphics[width=0.68\textwidth]{Plain k-mins iteration 7.jpeg} \\
+    \end{columns}
+\end{frame}
+
+% --- SLIDE 4: FINAL ITERATIONS & COMPARISON (REVISED LAYOUT) ---
+\begin{frame}{Final Convergence and Comparison}
+    \centering
+    
+    % Top Row: Iteration 9 and 10 side-by-side
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Plain k-mins iteration 8.jpeg} \\
+    \end{minipage}
+    \hfill
+    \begin{minipage}{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{Plain k-mins iteration 9.jpeg} \\
+    \end{minipage}
+    
+	\begin{itemize}
+    \item The $k$-means algorithm is applied using all four feature dimensions; however, for visualization purposes, results are projected onto the first two principal components (PC1 and PC2), as plotting is restricted to two dimensions.
+    \item In these iterations, blue points correspond to label $0$, while red points correspond to label $1$.
+\end{itemize}    
+    
+\end{frame}
+
+% --- SLIDE 5: PERFORMANCE APP 1 (REVISED LAYOUT) ---
+\begin{frame}{Performance: Standard Unsupervised K-Means}
+    \begin{columns}
+        % Left Column: Photo
+        \column{0.40\textwidth}
+        \centering 
+        \includegraphics[width=\textwidth]{Clustering vs True class (Plain k-mins).jpeg} \\
+        \vspace{0.2cm}
+        \small Clustering vs. True Class
+        
+        % Right Column: Tables and Key Observations
+        \column{0.60\textwidth}
+        \centering
+        
+        % Side-by-Side Tables
+        \scriptsize
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \textbf{Resubstitution Matrix} \\
+            (Single Optimal Run)
+            \begin{table}
+                \centering
+                \begin{tabular}{lcc}
+                    \toprule
+                     & Pred 0 & Pred 1 \\
+                    \midrule
+                    True 0 & 23 & 6 \\
+                    True 1 & 2 & 15 \\
+                    \bottomrule
+                \end{tabular}
+            \end{table}
+            \textbf{Acc: 82.61\%}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \textbf{Mean Confusion Matrix} \\
+            (Averaged)
+            \begin{table}
+                \centering
+                \begin{tabular}{lcc}
+                    \toprule
+                     & True 0 & True 1 \\
+                    \midrule
+                    Pred 0 & 2.942 & 0.553 \\
+                    Pred 1 & 1.676 & 4.830 \\
+                    \bottomrule
+                \end{tabular}
+            \end{table}
+            \textbf{Mean Acc: 77.71\%}
+        \end{minipage}
+        
+        \vspace{0.4cm}
+
+        % Key Observations Block (within the right column)
+        \begin{alertblock}{Key Observations}
+            \tiny
+            \begin{itemize}
+      
+                \item \textbf{Symmetric Error:} Likely to misclassify Group 0 as Group 1 (1.676) more than the opposite direction of misclassification (0.553).
+                \item \textbf{Overlap:} overlap in raw feature space limits unsupervised separation.
+            \end{itemize}
+        \end{alertblock}
+    \end{columns}
+\end{frame}
+
+% --- SLIDE 6: APPROACH 2 ALGO ---
+\begin{frame}{Approach 2: Group-Informed Initialization}
+    \textbf{The Informed K-Means Algorithm}:
+    \begin{itemize}
+        \item Instead of random points, centroids are initialized at the sample means of the known groups:
+        \[ \mu_0^{(0)} = \bar{x}_{Group 0}, \quad \mu_1^{(0)} = \bar{x}_{Group 1} \]
+        \item This anchors the clusters to the true centers of mass before the first assignment phase.
+    \end{itemize}
+    \begin{exampleblock}{Prediction Rule}
+        Identical Euclidean distance minimization to Approach 1, but with deterministic, mass-anchored starting points:
+    \[ \hat{c}^* = \arg \min_{k \in \{0,1\}} \|x^* - \mu_k^{(final)}\|^2 \]
+    \end{exampleblock}
+    
+\end{frame}
+
+% --- SLIDE 7: RESULTS: GROUP-INFORMED K-MEANS (UPDATED) ---
+\begin{frame}{Results: Group-Informed K-Means}
+    \begin{columns}
+        % Left Column: Photo
+        \column{0.40\textwidth}
+        \centering 
+        \includegraphics[width=\textwidth]{Clustering vs True class (k-mins with centers as group means).jpeg} \\
+        \vspace{0.2cm}
+        \small Clustering vs. True Class
+        
+        % Right Column: Tables and Key Observations
+        \column{0.60\textwidth}
+        \centering
+        
+        % Side-by-Side Tables
+        \scriptsize
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \textbf{Resubstitution Matrix} \\
+            (Single Optimal Run)
+            \begin{table}
+                \centering
+                \begin{tabular}{lcc}
+                    \toprule
+                    & \multicolumn{2}{c}{TrueClass} \\
+                    Clust & 0 & 1 \\
+                    \midrule
+                    0 & 18 & 4 \\
+                    1 & 3 & 21 \\
+                    \bottomrule
+                \end{tabular}
+            \end{table}
+            \textbf{Accuracy: 84.78\%}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \textbf{Mean Confusion Matrix} \\
+            (Averaged)
+            \begin{table}
+                \centering
+                \begin{tabular}{lcc}
+                    \toprule
+                    & \multicolumn{2}{c}{TrueClass} \\
+                    Pred & 0 & 1 \\
+                    \midrule
+                    0 & 3.365 & 0.695 \\
+                    1 & 1.252 & 4.688 \\
+                    \bottomrule
+                \end{tabular}
+            \end{table}
+            \textbf{Mean Acc: 80.54\%}
+        \end{minipage}
+        
+        \vspace{0.4cm}
+
+        % Key Observations Block (within the right column)
+        \begin{alertblock}{Key Observations}
+            \tiny
+            \begin{itemize}
+                \item \textbf{Improved Stability:} Seeding centroids at group means increases mean accuracy to 80.54\% from 77.71\%.
+
+                \item \textbf{Error Symmetry:} The model correctly identifies Group 1 cases (4.688) more frequently than Group 0 (3.365) on average.
+            \end{itemize}
+        \end{alertblock}
+    \end{columns}
+\end{frame}
+% --- SLIDE 8: APPROACH 3 ALGO ---
+\begin{frame}{Approach 3: Hybrid LDA-KMeans Clustering}
+    \textbf{Algorithm Steps}:
+    \begin{enumerate}
+        \item \textbf{Dimension Reduction:} Project 4D data onto the 1D LDA direction $w$ that maximizes:
+        \[ J(w) = \frac{w^T S_B w}{w^T S_W w} \]
+        \item \textbf{Feature Engineering:} Compute 1D discriminant scores $z_i = z(x_i) = \hat{w}^T x_i$ where $\hat{w}=\hat{\Sigma}^{-1} (\bar{x}_1 - \bar{x}_2)$.
+        \item \textbf{Cluster:} Apply K-Means on the 1D scores $z_i$ to find clusters.
+    \end{enumerate}
+    \begin{exampleblock}{Decision Rule}
+        Assign observation $x$ to cluster $k$ if its 1D score $z(x)$ is closest to the score-centroid $\nu_k$:
+    \[ \hat{c}(x) = \arg \min_{k \in \{0,1\}} |z(x) - \nu_k| \]
+    \end{exampleblock}
+    
+\end{frame}
+
+% --- SLIDE 9: PHOTOS APP 3 ---
+\begin{frame}{LDA-Clustering Visualizations}
+    \begin{columns}
+        \column{0.5\textwidth}
+        \centering \includegraphics[width=\textwidth]{Data projected onto LDA direction.jpeg} \\ \small 1. Projection onto LDA Direction
+        \column{0.5\textwidth}
+        \centering \includegraphics[width=\textwidth]{K-means clustering on LDA scores.jpeg} \\ \small 2. K-Means on LDA Scores
+    \end{columns}
+\end{frame}
+
+% --- SLIDE 10: RESULTS: HYBRID LDA + K-MEANS (UPDATED LAYOUT) ---
+\begin{frame}{Results: Hybrid LDA + K-Means}
+    \begin{columns}
+        % Left Column: Photo
+        \column{0.40\textwidth}
+        \centering 
+        \includegraphics[width=\textwidth]{Clustering vs True class (LDA + K-mins).jpeg} \\
+        \vspace{0.2cm}
+        \small Clustering vs. True Class
+        
+        % Right Column: Tables and Key Observations
+        \column{0.60\textwidth}
+        \centering
+        
+        % Side-by-Side Tables
+        \scriptsize
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \textbf{Resubstitution Matrix} \\
+            (LDA Space)
+            \begin{table}
+                \centering
+                \begin{tabular}{lcc}
+                    \toprule
+                    & \multicolumn{2}{c}{TrueClass} \\
+                    Clust & 0 & 1 \\
+                    \midrule
+                    0 & 20 & 1 \\
+                    1 & 3 & 18 \\
+                    \bottomrule
+                \end{tabular}
+            \end{table}
+            \textbf{Accuracy: 91.30\%}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.48\textwidth}
+            \centering
+            \textbf{Mean Confusion Matrix} \\
+            (Averaged)
+            \begin{table}
+                \centering
+                \begin{tabular}{lcc}
+                    \toprule
+                    & \multicolumn{2}{c}{TrueClass} \\
+                    Pred & 0 & 1 \\
+                    \midrule
+                    0 & 3.444 & 0.443 \\
+                    1 & 1.278 & 4.835 \\
+                    \bottomrule
+                \end{tabular}
+            \end{table}
+            \textbf{Mean Acc: 82.80\%}
+        \end{minipage}
+        
+        \vspace{0.4cm}
+
+        % Key Observations Block (within the right column)
+        \begin{alertblock}{Key Observations}
+            \tiny
+            \begin{itemize}
+                \item \textbf{Noise Reduction:} Filtering orthogonal noise via LDA projection allows K-Means to identify an optimal separation boundary.
+                \item \textbf{Highest Performance:} This hybrid method achieves the highest unsupervised recovery rate in the study (82.80\%).
+                \item \textbf{Optimized Convergence:} Mathematically guarantees convergence to a boundary with the lowest off-diagonal error rates.
+            \end{itemize}
+        \end{alertblock}
+    \end{columns}
+\end{frame}
+
+\begin{frame}{Clustering Synthesis and Final Conclusion}
+    \textbf{Comparative Performance Summary}
+    \begin{table}
+        \centering
+        \resizebox{0.9\textwidth}{!}{%
+        \begin{tabular}{lcc}
+            \toprule
+            \textbf{Clustering Strategy} & \textbf{Resubstitution Accuracy} & \textbf{Mean Accuracy (Averaged)} \\
+            \midrule
+            Standard Unsupervised $k$-Means & 82.61\% & 77.71\% \\
+            Group-Informed $k$-Means (Mean Seeds) & 84.78\% & 80.54\% \\
+            \textbf{Hybrid LDA + $k$-Means} & \textbf{91.30\%} & \textbf{82.80\%} \\
+            \bottomrule
+        \end{tabular}%
+        }
+    \end{table}
+
+    \vspace{0.3cm}
+
+    \begin{alertblock}{Definitive Conclusion: Hybrid LDA + $k$-Means}
+        The \textbf{Hybrid LDA + $k$-Means} approach is definitively the superior clustering model for isolating the bankrupt vs. financially sound cohorts.
+        \vspace{0.1cm}
+        \begin{itemize}
+            \item \textbf{Orthogonal Noise Filtering:} By projecting the raw $\mathbb{R}^4$ data onto an optimized 1D discriminant axis first, the algorithm successfully bypasses overlapping variance that confuses standard Euclidean distance metrics.
+            \item \textbf{Optimal Boundary Discovery:} Operating on LDA scores mathematically steers the $k$-means algorithm away from suboptimal local minima, forcing convergence to the boundary with the lowest off-diagonal error rates.
+            \item \textbf{Maximized Recovery:} Ultimately, this methodology leverages the strengths of supervised dimension reduction to achieve the highest unsupervised structural recovery rate ($82.80\%$) in the study.
+        \end{itemize}
+    \end{alertblock}
+\end{frame}
+
+
+\begin{frame}{Conclusions}
+    \begin{columns}[T]
+        \begin{column}{0.48\textwidth}
+            \begin{block}{Multivariate Analysis}
+                \small
+                \begin{itemize}
+                    \item \textbf{EDA \& Preprocessing:} $X_2$ and $X_3$ required Box-Cox transformation; Observation 46 removed as a structural outlier. Post-transformation, MVN assumptions were roughly satisfied.
+                    \item \textbf{Covariance Structure:} Box's M-test reversed from significant heteroscedasticity (raw data) to homoscedasticity post-transformation, formally justifying LDA.
+                    \item \textbf{Mean Separation:} MANOVA and Hotelling's $T^2$ unanimously rejected $H_0: \boldsymbol{\mu}_0 = \boldsymbol{\mu}_1$ ($p < 10^{-5}$) across both raw and transformed spaces, implying the data groups being separated enough to justify classification.
+               
+               \item \textbf{Factor Analysis:} Formally rejected factor analysis approach via KMO ($= 0.56$) and degree-of-freedom constraints.
+                \end{itemize}
+            \end{block}
+        \end{column}
+        \begin{column}{0.48\textwidth}
+            \begin{block}{Comparison of classification models}
+                \small
+                \begin{itemize}
+                    \item \textbf{Classification Post-Transform:} LDA achieved the best overall balance (Acc: 83.6\%, $F_1$: 0.839). QDA maximized Recall (87.1\%) at the cost of precision.
+                    \item \textbf{Naive Bayes:} Attained 86.19\% CV accuracy; competitive despite the naive independence assumption.
+                    \item \textbf{PCA:} PC1 and PC2 captured 83\% variance; PC2 isolated the uninformative $X_4$ signal.
+                   
+                    \item \textbf{Unsupervised:} Hybrid LDA + $k$-means achieved the highest unsupervised accuracy (82.80\%) among the clustering approaches, outperforming plain and seeded $k$-means.
+                \end{itemize}
+            \end{block}
+        \end{column}
+    \end{columns}
+\end{frame}
+
+\begin{frame}[plain]
+    \vfill
+    \begin{center}
+        \Huge \textbf{Thank You} \\[1cm]
+        \Large \textit{Questions \& Discussion}
+    \end{center}
+    \vfill
+\end{frame}
+
+
+
+\end{document}
